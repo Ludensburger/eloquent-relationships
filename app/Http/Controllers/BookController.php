@@ -13,12 +13,29 @@ class BookController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $books = Book::with(['author', 'genres', 'reviews'])->paginate(10);
+        $query = Book::with(['author', 'genres', 'reviews']);
+
+        if ($request->has('sort')) {
+            switch ($request->sort) {
+                case 'rating':
+                    // sort by avg rating DESC
+                    $query->withAvg('reviews', 'rating')->orderBy('reviews_avg_rating', 'desc');
+                    break;
+                case 'date':
+                    // latest first
+                    $query->orderBy('created_at', 'desc');
+                    break;
+                default:
+                    // fallback (optional)
+                    break;
+            }
+        }
+
+        $books = $query->paginate(10);
         return view('books.index', compact('books'));
     }
-
     /**
      * Show the form for creating a new resource.
      */
