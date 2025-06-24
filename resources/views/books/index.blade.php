@@ -34,14 +34,13 @@
             <th>Actions</th>
         </tr>
     </thead>
-    <tbody>
-        @foreach($books as $book)
+    <tbody> @foreach($books as $book)
         <tr>
             <td>{{ $book->title }}</td>
-            <td>{{ $book->author->name }}</td>
+            <td><a href="{{ route('authors.show', $book->author->id) }}" class="text-decoration-none">{{ $book->author->name }}</a></td>
             <td>
                 @foreach($book->genres as $genre)
-                {{ $genre->name }}{{ !$loop->last ? ', ' : '' }}
+                <a href="{{ route('genres.show', $genre->id) }}" class="text-decoration-none">{{ $genre->name }}</a>{{ !$loop->last ? ', ' : '' }}
                 @endforeach
             </td>
             <td>{{ $book->reviews->count() }}</td>
