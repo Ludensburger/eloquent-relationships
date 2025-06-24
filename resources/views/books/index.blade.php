@@ -21,7 +21,7 @@
 <!-- Display average rating for all books -->
 <div class="mb-3">
     <strong>Average Rating (All Books):</strong>
-    {{ number_format($books->flatMap->reviews->avg('rating') ?? 0, 2) }}
+    {{ number_format($books->flatMap(function($book) { return $book->reviews; })->avg('rating') ?? 0, 2) }}
 </div>
 <table class="table table-bordered">
     <thead class="table-dark">
