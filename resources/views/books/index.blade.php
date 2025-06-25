@@ -9,13 +9,18 @@
 @endif
 
 <form method="GET" action="{{ route('books.index') }}" class="mb-3">
-    <div class="input-group">
-        <select name="sort" class="form-select" onchange="this.form.submit()">
-            <option value="">-- Sort By --</option>
-            <option value="rating" {{ request('sort') == 'rating' ? 'selected' : '' }}>Rating</option>
-            <option value="date" {{ request('sort') == 'date' ? 'selected' : '' }}>Newest</option>
-        </select>
-        <button class="btn btn-primary" type="submit">Sort</button>
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label for="sort" class="form-label">Sort Books:</label>
+            <select name="sort" class="form-select" id="sort">
+                <option value="">-- Sort By --</option>
+                <option value="rating" {{ request('sort') == 'rating' ? 'selected' : '' }}>Rating</option>
+                <option value="date" {{ request('sort') == 'date' ? 'selected' : '' }}>Newest</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" type="submit">Apply</button>
+        </div>
     </div>
 </form>
 <!-- Display average rating for all books -->
@@ -46,12 +51,14 @@
             <td>{{ $book->reviews->count() }}</td>
             <td>{{ number_format($book->reviews->avg('rating'), 2) }}</td>
             <td>
-                <a href="{{ route('books.show', $book->id) }}" class="btn btn-info btn-sm">View</a>
-                <a href="{{ route('books.edit', $book->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                <form action="{{ route('books.destroy', $book->id) }}" method="POST" class="d-inline">
-                    @csrf @method('DELETE')
-                    <button type="submit" onclick="return confirm('Delete this book?')" class="btn btn-danger btn-sm">Delete</button>
-                </form>
+                <div class="d-flex gap-1">
+                    <a href="{{ route('books.show', $book->id) }}" class="btn btn-info btn-sm">View</a>
+                    <a href="{{ route('books.edit', $book->id) }}" class="btn btn-warning btn-sm">Edit</a>
+                    <form action="{{ route('books.destroy', $book->id) }}" method="POST" class="d-inline">
+                        @csrf @method('DELETE')
+                        <button type="submit" onclick="return confirm('Delete this book?')" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </div>
             </td>
 
         </tr>
