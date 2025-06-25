@@ -9,7 +9,7 @@
                     <h3 class="mb-0"><i class="fas fa-user-edit"></i> Edit Author: {{ $author->name }}</h3>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('authors.update', $author->id) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('authors.update', $author->id) }}" method="POST">
                         @csrf
                         @method('PUT')
                         
@@ -29,36 +29,6 @@
                             @enderror
                         </div>
 
-                        <div class="mb-4">
-                            <label for="image" class="form-label fw-bold">
-                                <i class="fas fa-image"></i> Author Photo (Optional)
-                            </label>
-                            
-                            @if($author->image)
-                            <div class="mb-3">
-                                <p class="text-muted">Current photo:</p>
-                                <img src="{{ asset($author->image) }}" alt="{{ $author->name }}" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
-                            </div>
-                            @endif
-                            
-                            <input type="file" 
-                                   class="form-control @error('image') is-invalid @enderror" 
-                                   id="image" 
-                                   name="image" 
-                                   accept="image/*"
-                                   onchange="previewImage(this)">
-                            <div class="form-text">Supported formats: JPEG, PNG, JPG, GIF. Max size: 2MB. Leave empty to keep current photo.</div>
-                            @error('image')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            
-                            <!-- Image Preview -->
-                            <div id="imagePreview" class="mt-3" style="display: none;">
-                                <p class="text-muted">New photo preview:</p>
-                                <img id="preview" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
-                            </div>
-                        </div>
-
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-warning btn-lg">
                                 <i class="fas fa-save"></i> Update Author
@@ -73,17 +43,4 @@
         </div>
     </div>
 </div>
-
-<script>
-function previewImage(input) {
-    if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('preview').src = e.target.result;
-            document.getElementById('imagePreview').style.display = 'block';
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-</script>
 @endsection

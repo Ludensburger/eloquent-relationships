@@ -31,20 +31,9 @@ class AuthorController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $data = $request->all();
-
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_' . $image->getClientOriginalName();
-            $image->move(public_path('images/authors'), $imageName);
-            $data['image'] = 'images/authors/' . $imageName;
-        }
-
-        Author::create($data);
+        Author::create($request->all());
 
         return redirect()->route('authors.index')->with('success', 'Author created successfully.');
     }
@@ -73,25 +62,9 @@ class AuthorController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $data = $request->all();
-
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            // Delete old image if it exists
-            if ($author->image && file_exists(public_path($author->image))) {
-                unlink(public_path($author->image));
-            }
-            
-            $image = $request->file('image');
-            $imageName = time() . '_' . $image->getClientOriginalName();
-            $image->move(public_path('images/authors'), $imageName);
-            $data['image'] = 'images/authors/' . $imageName;
-        }
-
-        $author->update($data);
+        $author->update($request->all());
 
         return redirect()->route('authors.index')->with('success', 'Author updated successfully.');
     }
