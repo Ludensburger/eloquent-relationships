@@ -44,11 +44,11 @@ class BookController extends Controller
     {
         $authors = Author::all();
         $genres = Genre::all();
-        
+
         // Pre-select author or genre if coming from their pages
         $selectedAuthor = $request->get('author_id');
         $selectedGenre = $request->get('genre_id');
-        
+
         return view('books.create', compact('authors', 'genres', 'selectedAuthor', 'selectedGenre'));
     }
 
@@ -79,7 +79,7 @@ class BookController extends Controller
      */
     public function show(string $id)
     {
-        $book = Book::with(['author', 'genre', 'reviews'])->findOrFail($id);
+        $book = Book::with(['author', 'genres', 'reviews'])->findOrFail($id);
         return view('books.show', compact('book'));
     }
 
