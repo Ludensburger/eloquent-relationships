@@ -12,18 +12,18 @@
                     <form action="{{ route('authors.update', $author->id) }}" method="POST">
                         @csrf
                         @method('PUT')
-                        
+
                         <div class="mb-4">
                             <label for="name" class="form-label fw-bold">
                                 <i class="fas fa-user"></i> Author Name
                             </label>
-                            <input type="text" 
-                                   class="form-control form-control-lg @error('name') is-invalid @enderror" 
-                                   id="name" 
-                                   name="name" 
-                                   value="{{ old('name', $author->name) }}" 
-                                   placeholder="Enter author's full name"
-                                   required>
+                            <input type="text"
+                                class="form-control form-control-lg @error('name') is-invalid @enderror"
+                                id="name"
+                                name="name"
+                                value="{{ old('name', $author->name) }}"
+                                placeholder="Enter author's full name"
+                                required>
                             @error('name')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
