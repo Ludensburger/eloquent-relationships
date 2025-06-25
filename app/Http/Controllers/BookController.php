@@ -37,13 +37,19 @@ class BookController extends Controller
         return view('books.index', compact('books'));
     }
     /**
+    /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         $authors = Author::all();
         $genres = Genre::all();
-        return view('books.create', compact('authors', 'genres'));
+        
+        // Pre-select author or genre if coming from their pages
+        $selectedAuthor = $request->get('author_id');
+        $selectedGenre = $request->get('genre_id');
+        
+        return view('books.create', compact('authors', 'genres', 'selectedAuthor', 'selectedGenre'));
     }
 
     /**
@@ -56,16 +62,24 @@ class BookController extends Controller
             'author_id' => 'required|exists:authors,id',
             'genre_ids' => 'required|array',
             'genre_ids.*' => 'exists:genres,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-
-        $book = Book::create([
+        $data = [
             'title' => $request->title,
             'author_id' => $request->author_id,
-        ]);
+        ];
 
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $image->move(public_path('images/books'), $imageName);
+            $data['image'] = 'images/books/' . $imageName;
+        }
+
+        $book = Book::create($data);
         $book->genres()->sync($request->genre_ids);
-
 
         return redirect()->route('books.index')->withSuccess('Book added successfully.');
     }
@@ -100,17 +114,33 @@ class BookController extends Controller
             'author_id' => 'required|exists:authors,id',
             'genre_ids' => 'required|array',
             'genre_ids.*' => 'exists:genres,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $book = Book::findOrFail($id);
-        $book->update([
+        
+        $data = [
             'title' => $request->title,
             'author_id' => $request->author_id,
-        ]);
+        ];
 
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image if it exists
+            if ($book->image && file_exists(public_path($book->image))) {
+                unlink(public_path($book->image));
+            }
+            
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $image->move(public_path('images/books'), $imageName);
+            $data['image'] = 'images/books/' . $imageName;
+        }
+
+        $book->update($data);
         $book->genres()->sync($request->genre_ids);
 
-        return redirect()->route('books.index')->withSucess('Book updated successfully.');
+        return redirect()->route('books.index')->withSuccess('Book updated successfully.');
     }
 
     /**
