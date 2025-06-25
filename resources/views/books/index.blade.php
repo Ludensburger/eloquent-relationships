@@ -22,7 +22,7 @@
 <div class="row mb-4">
     <div class="col-lg-8">
         <form method="GET" action="{{ route('books.index') }}" class="d-flex gap-2">
-            <select name="sort" class="form-select" onchange="this.form.submit()">
+            <select name="sort" class="form-select">
                 <option value="">🔄 Sort Books</option>
                 <option value="rating" {{ request('sort') == 'rating' ? 'selected' : '' }}>⭐ By Rating</option>
                 <option value="date" {{ request('sort') == 'date' ? 'selected' : '' }}>📅 By Date</option>
@@ -56,7 +56,11 @@
             <div class="card-body d-flex flex-column">
                 <!-- Book Header -->
                 <div class="mb-3">
-                    <h5 class="card-title fw-bold text-primary mb-2">{{ $book->title }}</h5>
+                    <h5 class="card-title mb-2">
+                        <a href="{{ route('books.show', $book->id) }}" class="text-decoration-none fw-bold text-primary">
+                            {{ $book->title }}
+                        </a>
+                    </h5>
                     <div class="d-flex align-items-center mb-2">
                         <i class="fas fa-user text-muted me-2"></i>
                         <a href="{{ route('authors.show', $book->author->id) }}" class="text-decoration-none text-secondary">
