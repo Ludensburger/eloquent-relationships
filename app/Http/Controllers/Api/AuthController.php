@@ -32,7 +32,11 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Delete any existing tokens for this user
+        $user->tokens()->delete();
+
+        // Create a new token that expires in 1 day
+        $token = $user->createToken('auth_token', ['*'], now()->addDay())->plainTextToken;
 
         return response()->json([
             'message' => 'User registered successfully',
@@ -64,7 +68,19 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Check if user has a valid (non-expired) token
+        $existingToken = $user->tokens()->where('expires_at', '>', now())->first();
+
+        if ($existingToken) {
+            // Return existing valid token
+            $token = $existingToken->token;
+        } else {
+            // Delete any expired tokens
+            $user->tokens()->delete();
+
+            // Create a new token that expires in 1 day
+            $token = $user->createToken('auth_token', ['*'], now()->addDay())->plainTextToken;
+        }
 
         return response()->json([
             'message' => 'Login successful',
