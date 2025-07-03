@@ -68,19 +68,24 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Check if user has a valid (non-expired) token
+        // Delete expired tokens
+        $user->tokens()->where('expires_at', '<=', now())->delete();
+
+        // If a valid token still exists, don't create a new one (but you can't retrieve the token string)
         $existingToken = $user->tokens()->where('expires_at', '>', now())->first();
 
         if ($existingToken) {
-            // Return existing valid token
-            $token = $existingToken->token;
-        } else {
-            // Delete any expired tokens
-            $user->tokens()->delete();
-
-            // Create a new token that expires in 1 day
-            $token = $user->createToken('auth_token', ['*'], now()->addDay())->plainTextToken;
+            return response()->json([
+                'message' => 'Already logged in with valid token. Please use stored token.',
+                'user' => $user,
+                'token_hint' => 'Token is still valid. Use the stored token on client side.',
+                'token_type' => 'Bearer',
+                'token_expires_at' => $existingToken->expires_at,
+            ]);
         }
+
+        // Create new token
+        $token = $user->createToken('auth_token', ['*'], now()->addDay())->plainTextToken;
 
         return response()->json([
             'message' => 'Login successful',
@@ -89,6 +94,7 @@ class AuthController extends Controller
             'token_type' => 'Bearer'
         ]);
     }
+
 
     public function logout(Request $request)
     {
