@@ -4,68 +4,46 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Book;
-use App\Models\Author;
-use App\Models\Genre;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
 
 class BookController extends Controller
 {
     /**
-     * Display a listing of books
+     * Display a listing of the resource.
      */
-    public function index(Request $request): JsonResponse
+    public function index()
     {
-        $query = Book::with(['author', 'genres', 'reviews']);
-
-        // Apply sorting if requested
-        if ($request->has('sort')) {
-            switch ($request->sort) {
-                case 'rating':
-                    $query->withAvg('reviews', 'rating')
-                        ->orderByDesc('reviews_avg_rating');
-                    break;
-                case 'date':
-                    $query->orderByDesc('created_at');
-                    break;
-                case 'title':
-                    $query->orderBy('title');
-                    break;
-            }
-        }
-
-        // Apply search if requested
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where('title', 'like', "%{$search}%")
-                ->orWhereHas('author', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
-        }
-
-        $books = $query->paginate($request->get('per_page', 15));
+        $books = Book::with(['author', 'genres', 'reviews'])->get();
 
         return response()->json([
-            'success' => true,
-            'data' => $books,
-            'message' => 'Books retrieved successfully'
+            'message' => 'Books retrieved successfully',
+            'data' => $books
         ]);
     }
 
     /**
-     * Store a newly created book
+     * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'author_id' => 'required|exists:authors,id',
-            'genre_ids' => 'array|exists:genres,id'
+            'genre_ids' => 'array',
+            'genre_ids.*' => 'exists:genres,id'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $book = Book::create([
             'title' => $request->title,
-            'author_id' => $request->author_id
+            'author_id' => $request->author_id,
         ]);
 
         // Attach genres if provided
@@ -73,96 +51,70 @@ class BookController extends Controller
             $book->genres()->attach($request->genre_ids);
         }
 
-        $book->load(['author', 'genres']);
+        $book->load(['author', 'genres', 'reviews']);
 
         return response()->json([
-            'success' => true,
-            'data' => $book,
-            'message' => 'Book created successfully'
+            'message' => 'Book created successfully',
+            'data' => $book
         ], 201);
     }
 
     /**
-     * Display the specified book
+     * Display the specified resource.
      */
-    public function show(Book $book): JsonResponse
+    public function show(Book $book)
     {
         $book->load(['author', 'genres', 'reviews']);
 
         return response()->json([
-            'success' => true,
-            'data' => $book,
-            'message' => 'Book retrieved successfully'
+            'message' => 'Book retrieved successfully',
+            'data' => $book
         ]);
     }
 
     /**
-     * Update the specified book
+     * Update the specified resource in storage.
      */
-    public function update(Request $request, Book $book): JsonResponse
+    public function update(Request $request, Book $book)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => 'sometimes|required|string|max:255',
             'author_id' => 'sometimes|required|exists:authors,id',
-            'genre_ids' => 'sometimes|array|exists:genres,id'
+            'genre_ids' => 'array',
+            'genre_ids.*' => 'exists:genres,id'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $book->update($request->only(['title', 'author_id']));
 
-        // Update genres if provided
+        // Sync genres if provided
         if ($request->has('genre_ids')) {
             $book->genres()->sync($request->genre_ids);
         }
 
-        $book->load(['author', 'genres']);
+        $book->load(['author', 'genres', 'reviews']);
 
         return response()->json([
-            'success' => true,
-            'data' => $book,
-            'message' => 'Book updated successfully'
+            'message' => 'Book updated successfully',
+            'data' => $book
         ]);
     }
 
     /**
-     * Remove the specified book
+     * Remove the specified resource from storage.
      */
-    public function destroy(Book $book): JsonResponse
+    public function destroy(Book $book)
     {
         $book->delete();
 
         return response()->json([
-            'success' => true,
             'message' => 'Book deleted successfully'
-        ]);
-    }
-
-    /**
-     * Get books by author
-     */
-    public function byAuthor(Author $author): JsonResponse
-    {
-        $books = $author->books()->with(['genres', 'reviews'])->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $books,
-            'author' => $author,
-            'message' => 'Books by author retrieved successfully'
-        ]);
-    }
-
-    /**
-     * Get books by genre
-     */
-    public function byGenre(Genre $genre): JsonResponse
-    {
-        $books = $genre->books()->with(['author', 'reviews'])->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $books,
-            'genre' => $genre,
-            'message' => 'Books by genre retrieved successfully'
         ]);
     }
 }

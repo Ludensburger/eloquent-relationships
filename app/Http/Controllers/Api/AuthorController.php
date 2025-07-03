@@ -5,104 +5,97 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Author;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
 
 class AuthorController extends Controller
 {
     /**
-     * Display a listing of authors
+     * Display a listing of the resource.
      */
-    public function index(Request $request): JsonResponse
+    public function index()
     {
-        $query = Author::withCount('books');
-
-        // Apply search if requested
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where('name', 'like', "%{$search}%");
-        }
-
-        $authors = $query->paginate($request->get('per_page', 15));
+        $authors = Author::with(['books'])->get();
 
         return response()->json([
-            'success' => true,
-            'data' => $authors,
-            'message' => 'Authors retrieved successfully'
+            'message' => 'Authors retrieved successfully',
+            'data' => $authors
         ]);
     }
 
     /**
-     * Store a newly created author
+     * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255|unique:authors,name'
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $author = Author::create([
-            'name' => $request->name
+            'name' => $request->name,
         ]);
 
+        $author->load(['books']);
+
         return response()->json([
-            'success' => true,
-            'data' => $author,
-            'message' => 'Author created successfully'
+            'message' => 'Author created successfully',
+            'data' => $author
         ], 201);
     }
 
     /**
-     * Display the specified author
+     * Display the specified resource.
      */
-    public function show(Author $author): JsonResponse
+    public function show(Author $author)
     {
-        $author->load('books.genres');
-        $author->loadCount('books');
+        $author->load(['books']);
 
         return response()->json([
-            'success' => true,
-            'data' => $author,
-            'message' => 'Author retrieved successfully'
+            'message' => 'Author retrieved successfully',
+            'data' => $author
         ]);
     }
 
     /**
-     * Update the specified author
+     * Update the specified resource in storage.
      */
-    public function update(Request $request, Author $author): JsonResponse
+    public function update(Request $request, Author $author)
     {
-        $request->validate([
-            'name' => 'required|string|max:255|unique:authors,name,' . $author->id
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:255',
         ]);
 
-        $author->update([
-            'name' => $request->name
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $author,
-            'message' => 'Author updated successfully'
-        ]);
-    }
-
-    /**
-     * Remove the specified author
-     */
-    public function destroy(Author $author): JsonResponse
-    {
-        // Check if author has books
-        if ($author->books()->count() > 0) {
+        if ($validator->fails()) {
             return response()->json([
-                'success' => false,
-                'message' => 'Cannot delete author with existing books'
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
             ], 422);
         }
 
+        $author->update($request->only(['name']));
+        $author->load(['books']);
+
+        return response()->json([
+            'message' => 'Author updated successfully',
+            'data' => $author
+        ]);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Author $author)
+    {
         $author->delete();
 
         return response()->json([
-            'success' => true,
             'message' => 'Author deleted successfully'
         ]);
     }

@@ -5,104 +5,97 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Genre;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
 
 class GenreController extends Controller
 {
     /**
-     * Display a listing of genres
+     * Display a listing of the resource.
      */
-    public function index(Request $request): JsonResponse
+    public function index()
     {
-        $query = Genre::withCount('books');
-
-        // Apply search if requested
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where('name', 'like', "%{$search}%");
-        }
-
-        $genres = $query->paginate($request->get('per_page', 15));
+        $genres = Genre::with(['books'])->get();
 
         return response()->json([
-            'success' => true,
-            'data' => $genres,
-            'message' => 'Genres retrieved successfully'
+            'message' => 'Genres retrieved successfully',
+            'data' => $genres
         ]);
     }
 
     /**
-     * Store a newly created genre
+     * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255|unique:genres,name'
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $genre = Genre::create([
-            'name' => $request->name
+            'name' => $request->name,
         ]);
 
+        $genre->load(['books']);
+
         return response()->json([
-            'success' => true,
-            'data' => $genre,
-            'message' => 'Genre created successfully'
+            'message' => 'Genre created successfully',
+            'data' => $genre
         ], 201);
     }
 
     /**
-     * Display the specified genre
+     * Display the specified resource.
      */
-    public function show(Genre $genre): JsonResponse
+    public function show(Genre $genre)
     {
-        $genre->load('books.author');
-        $genre->loadCount('books');
+        $genre->load(['books']);
 
         return response()->json([
-            'success' => true,
-            'data' => $genre,
-            'message' => 'Genre retrieved successfully'
+            'message' => 'Genre retrieved successfully',
+            'data' => $genre
         ]);
     }
 
     /**
-     * Update the specified genre
+     * Update the specified resource in storage.
      */
-    public function update(Request $request, Genre $genre): JsonResponse
+    public function update(Request $request, Genre $genre)
     {
-        $request->validate([
-            'name' => 'required|string|max:255|unique:genres,name,' . $genre->id
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:255',
         ]);
 
-        $genre->update([
-            'name' => $request->name
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $genre,
-            'message' => 'Genre updated successfully'
-        ]);
-    }
-
-    /**
-     * Remove the specified genre
-     */
-    public function destroy(Genre $genre): JsonResponse
-    {
-        // Check if genre has books
-        if ($genre->books()->count() > 0) {
+        if ($validator->fails()) {
             return response()->json([
-                'success' => false,
-                'message' => 'Cannot delete genre with existing books'
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
             ], 422);
         }
 
+        $genre->update($request->only(['name']));
+        $genre->load(['books']);
+
+        return response()->json([
+            'message' => 'Genre updated successfully',
+            'data' => $genre
+        ]);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Genre $genre)
+    {
         $genre->delete();
 
         return response()->json([
-            'success' => true,
             'message' => 'Genre deleted successfully'
         ]);
     }

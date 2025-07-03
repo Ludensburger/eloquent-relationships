@@ -4,126 +4,105 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Review;
-use App\Models\Book;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
 
 class ReviewController extends Controller
 {
     /**
-     * Display a listing of reviews
+     * Display a listing of the resource.
      */
-    public function index(Request $request): JsonResponse
+    public function index()
     {
-        $query = Review::with(['book.author']);
-
-        // Filter by book if requested
-        if ($request->has('book_id')) {
-            $query->where('book_id', $request->book_id);
-        }
-
-        // Filter by rating if requested
-        if ($request->has('rating')) {
-            $query->where('rating', $request->rating);
-        }
-
-        $reviews = $query->paginate($request->get('per_page', 15));
+        $reviews = Review::with(['book'])->get();
 
         return response()->json([
-            'success' => true,
-            'data' => $reviews,
-            'message' => 'Reviews retrieved successfully'
+            'message' => 'Reviews retrieved successfully',
+            'data' => $reviews
         ]);
     }
 
     /**
-     * Store a newly created review
+     * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'book_id' => 'required|exists:books,id',
+            'content' => 'required|string',
             'rating' => 'required|integer|min:1|max:5',
-            'content' => 'required|string|max:1000'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         $review = Review::create([
             'book_id' => $request->book_id,
+            'content' => $request->content,
             'rating' => $request->rating,
-            'content' => $request->content
         ]);
 
-        $review->load(['book.author']);
+        $review->load(['book']);
 
         return response()->json([
-            'success' => true,
-            'data' => $review,
-            'message' => 'Review created successfully'
+            'message' => 'Review created successfully',
+            'data' => $review
         ], 201);
     }
 
     /**
-     * Display the specified review
+     * Display the specified resource.
      */
-    public function show(Review $review): JsonResponse
+    public function show(Review $review)
     {
-        $review->load(['book.author']);
+        $review->load(['book']);
 
         return response()->json([
-            'success' => true,
-            'data' => $review,
-            'message' => 'Review retrieved successfully'
+            'message' => 'Review retrieved successfully',
+            'data' => $review
         ]);
     }
 
     /**
-     * Update the specified review
+     * Update the specified resource in storage.
      */
-    public function update(Request $request, Review $review): JsonResponse
+    public function update(Request $request, Review $review)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
+            'book_id' => 'sometimes|required|exists:books,id',
+            'content' => 'sometimes|required|string',
             'rating' => 'sometimes|required|integer|min:1|max:5',
-            'content' => 'sometimes|required|string|max:1000'
         ]);
 
-        $review->update($request->only(['rating', 'content']));
-        $review->load(['book.author']);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $review->update($request->only(['book_id', 'content', 'rating']));
+        $review->load(['book']);
 
         return response()->json([
-            'success' => true,
-            'data' => $review,
-            'message' => 'Review updated successfully'
+            'message' => 'Review updated successfully',
+            'data' => $review
         ]);
     }
 
     /**
-     * Remove the specified review
+     * Remove the specified resource from storage.
      */
-    public function destroy(Review $review): JsonResponse
+    public function destroy(Review $review)
     {
         $review->delete();
 
         return response()->json([
-            'success' => true,
             'message' => 'Review deleted successfully'
-        ]);
-    }
-
-    /**
-     * Get reviews for a specific book
-     */
-    public function byBook(Book $book): JsonResponse
-    {
-        $reviews = $book->reviews()->latest()->get();
-        $averageRating = $reviews->avg('rating');
-
-        return response()->json([
-            'success' => true,
-            'data' => $reviews,
-            'book' => $book->load('author'),
-            'average_rating' => round($averageRating, 1),
-            'total_reviews' => $reviews->count(),
-            'message' => 'Book reviews retrieved successfully'
         ]);
     }
 }
