@@ -45,56 +45,49 @@ class AuthController extends Controller
             'token_type' => 'Bearer'
         ], 201);
     }
-
     public function login(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'username' => 'required|string',
             'password' => 'required',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         $user = User::where('name', $request->username)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
-        }
-
-        // Delete expired tokens
-        $user->tokens()->where('expires_at', '<=', now())->delete();
-
-        // If a valid token still exists, don't create a new one (but you can't retrieve the token string)
-        $existingToken = $user->tokens()->where('expires_at', '>', now())->first();
-
-        if ($existingToken) {
-            return response()->json([
-                'message' => 'Already logged in with valid token. Please use stored token.',
-                'user' => $user,
-                'token_hint' => 'Token is still valid. Use the stored token on client side.',
-                'token_type' => 'Bearer',
-                'token_expires_at' => $existingToken->expires_at,
+            throw ValidationException::withMessages([
+                'username' => ['The provided credentials are incorrect.'],
             ]);
         }
 
-        // Create new token
-        $token = $user->createToken('auth_token', ['*'], now()->addDay())->plainTextToken;
+        // Check if user has a valid (non-expired) token
+        $existingToken = $user->tokens()
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if ($existingToken) {
+            // Token is still valid - just confirm login, DON'T create new token
+            return response()->json([
+                'message' => 'Login successful - using existing token',
+                'user' => $user,
+                'token_status' => 'valid',
+                'token_expires_at' => $existingToken->expires_at,
+                'note' => 'Continue using your existing token'
+            ]);
+        }
+
+        // Only create new token if the old one expired
+        $user->tokens()->delete(); // Clean up expired tokens
+        $token = $user->createToken('auth-token', ['*'], now()->addDay());
 
         return response()->json([
-            'message' => 'Login successful',
+            'message' => 'Login successful - new token created',
             'user' => $user,
-            'token' => $token,
-            'token_type' => 'Bearer'
+            'token' => $token->plainTextToken,
+            'token_type' => 'Bearer',
+            'token_expires_at' => $token->accessToken->expires_at,
         ]);
     }
-
 
     public function logout(Request $request)
     {
