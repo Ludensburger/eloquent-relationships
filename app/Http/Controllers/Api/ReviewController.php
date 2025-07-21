@@ -105,4 +105,21 @@ class ReviewController extends Controller
             'message' => 'Review deleted successfully'
         ]);
     }
+
+    public function getByBook($bookId)
+    {
+        $reviews = Review::with('book')->where('book_id', $bookId)->get();
+
+        if ($reviews->isEmpty()) {
+            return response()->json([
+                'message' => 'No reviews found for this book.',
+                'data' => []
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Reviews retrieved successfully',
+            'data' => $reviews
+        ]);
+    }
 }
