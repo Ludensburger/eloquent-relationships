@@ -106,6 +106,9 @@
                         <a href="{{ route('books.edit', $book->id) }}" class="btn btn-outline-warning btn-sm">
                             <i class="fas fa-edit"></i> Edit
                         </a>
+                        <a href="{{ route('reviews.create', ['book_id' => $book->id]) }}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-star"></i> Review
+                        </a>
                         <form action="{{ route('books.destroy', $book->id) }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')

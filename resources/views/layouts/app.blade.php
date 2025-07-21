@@ -16,6 +16,7 @@
                 <a class="nav-link" href="{{ route('books.index') }}">Books</a>
                 <a class="nav-link" href="{{ route('authors.index') }}">Authors</a>
                 <a class="nav-link" href="{{ route('genres.index') }}">Genres</a>
+                <a class="nav-link" href="{{ route('reviews.create') }}">Add Review</a>
             </div>
         </div>
     </nav>

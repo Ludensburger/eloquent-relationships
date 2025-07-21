@@ -64,6 +64,9 @@
     <a href="{{ route('books.edit', $book->id) }}" class="btn btn-warning">
         <i class="fas fa-edit me-2"></i>Edit Book
     </a>
+    <a href="{{ route('reviews.create', ['book_id' => $book->id]) }}" class="btn btn-primary">
+        <i class="fas fa-star me-2"></i>Review This Book
+    </a>
 </div>
 
 <!-- Reviews Section -->
